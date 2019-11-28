@@ -6,21 +6,16 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ImageView
-import android.widget.TextView
+import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.empeegee.android.photogallery.API.FlickrApi
-import retrofit2.*
-import retrofit2.converter.scalars.ScalarsConverterFactory
+
 
 class PhotoGalleryFragment : Fragment() {
 
@@ -32,11 +27,13 @@ class PhotoGalleryFragment : Fragment() {
         super.onCreate(savedInstanceState)
 
         retainInstance = true
+        setHasOptionsMenu(true)
+
         photoGalleryViewModel =
             ViewModelProviders.of(this).get(PhotoGalleryViewModel::class.java)
 
         val responseHandler = Handler()
-        thumbnailDownloader= ThumbnailDownloader(responseHandler) {
+        thumbnailDownloader = ThumbnailDownloader(responseHandler) {
             photoHolder, bitmap ->
             val drawable = BitmapDrawable(resources, bitmap)
             photoHolder.bindDrawable(drawable)
@@ -85,6 +82,53 @@ class PhotoGalleryFragment : Fragment() {
 
         lifecycle.removeObserver(thumbnailDownloader.fragmentLifecycleObserver)
     }
+
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+
+        inflater.inflate(R.menu.fragment_photo_gallery, menu)
+
+        val searchItem: MenuItem = menu.findItem(R.id.menu_item_search)
+        val searchView = searchItem.actionView as SearchView
+
+        searchView.apply {
+            setOnQueryTextListener(object : SearchView.OnQueryTextListener{
+                override fun onQueryTextSubmit(queryText: String): Boolean {
+                    Log.d("AAA", "QueryTextSubmit $queryText")
+                    photoGalleryViewModel.fetchPhotos(queryText)
+
+                    return true
+                }
+
+                override fun onQueryTextChange(queryText: String?): Boolean {
+                    Log.d("AAA", "queryTextChanged $queryText")
+
+                    return false
+                }
+            })
+
+
+            setOnClickListener {
+                searchView.setQuery(photoGalleryViewModel.seachTerm, false)
+            }
+        }
+    }
+
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.menu_item_clear -> {
+                photoGalleryViewModel.fetchPhotos("")
+                true
+            } else -> {
+                super.onOptionsItemSelected(item)
+            }
+        }
+    }
+
+
+
 
     private class PhotoHolder(itemView: ImageView) : RecyclerView.ViewHolder(itemView) {
         val bindDrawable: (Drawable) -> Unit = itemView::setImageDrawable
