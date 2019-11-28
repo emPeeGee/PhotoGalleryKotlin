@@ -1,5 +1,6 @@
 package com.empeegee.android.photogallery
 
+import android.content.Context
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -7,14 +8,20 @@ import android.os.Bundle
 import android.os.Handler
 import android.util.Log
 import android.view.*
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkManager
 
 
 class PhotoGalleryFragment : Fragment() {
@@ -41,6 +48,17 @@ class PhotoGalleryFragment : Fragment() {
 
         lifecycle.addObserver(thumbnailDownloader.fragmentLifecycleObserver)
 
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.UNMETERED)
+            .build()
+
+        val workRequest = OneTimeWorkRequest
+            .Builder(PoolWorker::class.java)
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance().enqueue(workRequest)
     }
 
     override fun onCreateView(
@@ -92,11 +110,17 @@ class PhotoGalleryFragment : Fragment() {
         val searchItem: MenuItem = menu.findItem(R.id.menu_item_search)
         val searchView = searchItem.actionView as SearchView
 
+
         searchView.apply {
-            setOnQueryTextListener(object : SearchView.OnQueryTextListener{
+
+            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
                 override fun onQueryTextSubmit(queryText: String): Boolean {
                     Log.d("AAA", "QueryTextSubmit $queryText")
                     photoGalleryViewModel.fetchPhotos(queryText)
+
+                    val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                    imm?.hideSoftInputFromWindow(searchView.windowToken, 0)
+                    searchView.onActionViewCollapsed()
 
                     return true
                 }
@@ -109,9 +133,10 @@ class PhotoGalleryFragment : Fragment() {
             })
 
 
-            setOnClickListener {
+            setOnSearchClickListener {
                 searchView.setQuery(photoGalleryViewModel.seachTerm, false)
             }
+
         }
     }
 
