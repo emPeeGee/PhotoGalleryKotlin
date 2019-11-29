@@ -1,11 +1,13 @@
 package com.empeegee.android.photogallery
 
 import android.content.Context
+import android.preference.Preference
 import android.preference.PreferenceManager
 import androidx.core.content.edit
 
 private const val PREF_SEACH_QUERY = "searchQuery"
 private const val PREF_LAST_RESULT = "lastResultId"
+private const val PREF_IS_POOLING  = "isPolling"
 
 object QueryPreferences {
 
@@ -29,6 +31,16 @@ object QueryPreferences {
     fun setLastResultId(context: Context, lastResultId: String) {
         PreferenceManager.getDefaultSharedPreferences(context).edit{
             putString(PREF_LAST_RESULT, lastResultId)
+        }
+    }
+
+    fun isPolling(context: Context): Boolean {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(PREF_IS_POOLING, false)
+    }
+
+    fun setPolling(context: Context, isOn: Boolean) {
+        PreferenceManager.getDefaultSharedPreferences(context).edit{
+            putBoolean(PREF_IS_POOLING, isOn)
         }
     }
 }

@@ -1,7 +1,11 @@
 package com.empeegee.android.photogallery
 
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 
@@ -37,10 +41,26 @@ class PoolWorker(val context: Context, workerParameters: WorkerParameters) : Wor
             Log.i(TAG, "Got an old result $resultId")
         } else {
             Log.d(TAG, "Got an new result $resultId")
+            QueryPreferences.setLastResultId(context, resultId)
+
+
+            val intent = PhotoGalleryActivity.newIntent(context)
+            val pendingIntent = PendingIntent.getActivity(context, 0, intent, 0)
+
+            val resource = context.resources
+            val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
+                .setTicker(resource.getString(R.string.new_pictures_title))
+                .setSmallIcon(android.R.drawable.ic_menu_report_image)
+                .setContentTitle(resource.getString(R.string.new_pictures_title))
+                .setContentText(resource.getString(R.string.new_pictures_text))
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true).build()
+
+            val notificationManager = NotificationManagerCompat.from(context)
+            notificationManager.notify(0, notification)
         }
 
-        QueryPreferences.setLastResultId(context, resultId)
-
         return Result.success()
+
     }
 }
