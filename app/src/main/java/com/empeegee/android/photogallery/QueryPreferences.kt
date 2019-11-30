@@ -1,7 +1,6 @@
 package com.empeegee.android.photogallery
 
 import android.content.Context
-import android.preference.Preference
 import android.preference.PreferenceManager
 import androidx.core.content.edit
 

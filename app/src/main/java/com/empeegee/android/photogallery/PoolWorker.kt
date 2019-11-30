@@ -1,8 +1,9 @@
 package com.empeegee.android.photogallery
 
-import android.app.NotificationManager
+import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -14,7 +15,9 @@ private const val TAG = "AAAA"
 class PoolWorker(val context: Context, workerParameters: WorkerParameters) : Worker(context, workerParameters) {
 
     override fun doWork(): Result {
+        context.sendBroadcast(Intent(ACTION_SHOW_NOTIFICATION))
 
+        Log.d(TAG, "New doWork() begins")
         val query = QueryPreferences.getStoredQuery(context)
         val lastResultId = QueryPreferences.getLastResultId(context)
 
@@ -54,13 +57,34 @@ class PoolWorker(val context: Context, workerParameters: WorkerParameters) : Wor
                 .setContentTitle(resource.getString(R.string.new_pictures_title))
                 .setContentText(resource.getString(R.string.new_pictures_text))
                 .setContentIntent(pendingIntent)
-                .setAutoCancel(true).build()
+                .setAutoCancel(true)
+                .build()
 
-            val notificationManager = NotificationManagerCompat.from(context)
-            notificationManager.notify(0, notification)
+
+
+            showBackgroundNotification(0, notification)
         }
 
         return Result.success()
 
+    }
+
+    fun showBackgroundNotification(
+        requestCode: Int,
+        notification: Notification
+    ) {
+        val intent = Intent(ACTION_SHOW_NOTIFICATION).apply {
+            putExtra(REQUEST_CODE, requestCode)
+            putExtra(NOTIFICATION, notification)
+        }
+
+        context.sendOrderedBroadcast(intent, PERM_PRIVATE)
+    }
+
+    companion object {
+        const val ACTION_SHOW_NOTIFICATION = "com.example.empeegee.android.photohallery.SHOW_NOTIFICATION"
+        const val PERM_PRIVATE = "com.empeegee.android.photogallery.PRIVATE"
+        const val REQUEST_CODE = "REQUEST_CODE"
+        const val NOTIFICATION = "NOTIFICATION"
     }
 }
